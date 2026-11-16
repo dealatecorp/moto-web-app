@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#e8edf3" />
+    <title>PROFIT+ Auto Finance</title>
+    <link rel="icon" type="image/jpeg" href="logo.jpeg" />
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="overrides.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <button class="brand" data-page="home" aria-label="Go to dashboard">
+          <img class="brand-mark" src="logo.jpeg" alt="" width="46" height="46" />
+          <span class="brand-copy"><strong>PROFIT<span>+</span></strong><small>Auto Finance</small></span>
+        </button>
+        <nav class="top-nav" aria-label="Main menu">
+          <button data-page="applications">Master Data Entry</button>
+          <button data-page="receipts">Daily Transaction Entry</button>
+          <button data-page="applications">Search</button>
+          <button data-page="monthly">Ad-Ons</button>
+          <button data-page="reports">Reports</button>
+          <button data-page="about">About us</button>
+          <button data-page="showroom">ShowRoom</button>
+        </nav>
+        <div class="topbar-right"><span class="online-dot"></span><span id="live-clock">—</span><button id="view-mode-toggle" class="view-mode-toggle" type="button">Popup view</button><button class="avatar" aria-label="User menu">AD</button></div>
+      </header>
+
+      <div class="workspace">
+        <aside class="sidebar">
+          <div class="sidebar-profile">
+            <div class="profile-avatar">PB</div>
+            <div><strong>Padma Bhushan</strong><small>Administrator</small></div>
+            <span class="profile-chevron">⌄</span>
+          </div>
+          <div class="side-label">WORKSPACE</div>
+          <button class="side-link active" data-page="home"><span class="side-icon">⌂</span>Dashboard</button>
+          <button class="side-link" data-page="applications"><span class="side-icon">▤</span>Applications <span class="side-count" id="application-count">0</span></button>
+          <button class="side-link" data-page="new-application"><span class="side-icon">＋</span>Customer creation</button>
+          <button class="side-link" data-page="customers"><span class="side-icon">♙</span>Customers</button>
+          <button class="side-link" data-page="calculation"><span class="side-icon">∑</span>Calculation</button>
+          <button class="side-link" data-page="receipts"><span class="side-icon">↙</span>Receipt entry</button>
+          <button class="side-link" data-page="voucher"><span class="side-icon">▤</span>Voucher entry</button>
+          <button class="side-link" data-page="payment"><span class="side-icon">↗</span>Payment entry</button>
+          <button class="side-link" data-page="journal"><span class="side-icon">≡</span>Journal entry</button>
+          <button class="side-link" data-page="contra"><span class="side-icon">⇄</span>Contra voucher</button>
+          <button class="side-link" data-page="due"><span class="side-icon">◷</span>Due list</button>
+          <div class="side-label side-label-spaced">MANAGEMENT</div>
+          <button class="side-link" data-page="ledger"><span class="side-icon">▥</span>Ledger</button>
+          <button class="side-link" data-page="hp-register"><span class="side-icon">▦</span>HP register</button>
+          <button class="side-link" data-page="hp-details"><span class="side-icon">⌕</span>HP details</button>
+          <button class="side-link" data-page="od-calculation"><span class="side-icon">%</span>OD calculation</button>
+          <button class="side-link" data-page="monthly"><span class="side-icon">▣</span>Monthly transactions</button>
+          <button class="side-link" data-page="vehicles"><span class="side-icon">◉</span>Vehicle status</button>
+          <button class="side-link" data-page="vehicle-seizing"><span class="side-icon">⚑</span>Vehicle seizing</button>
+          <button class="side-link" data-page="account-close"><span class="side-icon">×</span>Account closing</button>
+          <button class="side-link" data-page="daybook"><span class="side-icon">▧</span>Daybook details</button>
+          <button class="side-link" data-page="reports"><span class="side-icon">▧</span>Reports</button>
+          <div class="side-label side-label-spaced">MASTER DATA</div>
+          <button class="side-link" data-page="branches"><span class="side-icon">⌂</span>Branch creation</button>
+          <button class="side-link" data-page="lines"><span class="side-icon">⌖</span>Line creation</button>
+          <button class="side-link" data-page="books"><span class="side-icon">▣</span>Book creation</button>
+          <button class="side-link" data-page="showroom"><span class="side-icon">◉</span>Showroom</button>
+          <button class="side-link" data-page="about"><span class="side-icon">ⓘ</span>About PROFIT+</button>
+          <div class="sidebar-bottom"><div class="help-card"><span class="help-icon">?</span><div><strong>Need a hand?</strong><small>Open the quick guide</small></div><span>›</span></div><small class="version">PROFIT+ · Finance Suite 2.6</small></div>
+        </aside>
+
+        <main class="main-area" tabindex="-1">
+          <div class="workspace-toolbar">
+            <nav class="breadcrumb" aria-label="Breadcrumb">
+              <a href="./index.html" data-page="home">Workspace</a>
+              <span class="crumb-separator" aria-hidden="true">/</span>
+              <strong id="breadcrumb-current" aria-current="page">Dashboard</strong>
+            </nav>
+            <div class="popup-module-picker" hidden>
+              <label for="popup-module">Module</label>
+              <select id="popup-module"></select>
+            </div>
+          </div>
+          <div id="popup-page-frame"><div id="page-content"></div></div>
+          <footer class="footer-line"><span>© 2026 Padma Bhushan Auto Finance</span><span><i class="online-dot"></i> All changes saved locally</span></footer>
+        </main>
+      </div>
+    </div>
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <script src="app.js"></script>
+  </body>
+</html>
