@@ -95,7 +95,6 @@ function navigate(page, accountCode) {
   document.querySelectorAll('.top-nav button').forEach((link) => link.classList.toggle('active', link.dataset.page === page));
   document.querySelector('#popup-module').value = page;
   render(accountCode);
-  if (!document.body.classList.contains('popup-interface-mode')) window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 const popupPageGroups=[
   ['Home and customers',[['home','Dashboard'],['applications','Customer list'],['new-application','Customer creation'],['customers','Customer directory'],['calculation','Calculation']]],
@@ -119,12 +118,12 @@ function setViewMode(mode) {
   document.querySelector('#view-mode-toggle').textContent = popup ? 'Sidebar view' : 'Popup view';
   try { localStorage.setItem(VIEW_MODE_KEY, mode); } catch {}
 }
-function paginatePopupTables(content, frameHeight) {
+function paginateTables(content, frameHeight) {
   const defaultLimit = Math.max(4, Math.min(12, Math.floor((frameHeight - 250) / 30)));
   for (const wrap of content.querySelectorAll('.table-wrap')) {
     const body = wrap.querySelector('table > tbody');
     if (!body || !wrap.getClientRects().length) continue;
-    const limit = wrap.closest('.calculation-report') ? Math.min(defaultLimit, 7) : defaultLimit;
+    const limit = wrap.closest('.calculation-report') ? Math.min(defaultLimit, 5) : defaultLimit;
     const rows = [...body.rows].filter(row => !row.hidden);
     let pager = wrap.nextElementSibling;
     if (!pager?.matches('.popup-pagination')) {
@@ -137,7 +136,7 @@ function paginatePopupTables(content, frameHeight) {
         const button = event.target.closest('button');
         if (!button) return;
         pager.dataset.popupPage = Number(pager.dataset.popupPage) + (button === pager.firstElementChild ? -1 : 1);
-        fitPopupContent();
+        fitPageContent();
       });
     }
     const lastPage = Math.max(0, Math.ceil(rows.length / limit) - 1);
@@ -152,12 +151,11 @@ function paginatePopupTables(content, frameHeight) {
     if (label.textContent !== range) label.textContent = range;
   }
 }
-function fitPopupContent() {
-  if (!document.body.classList.contains('popup-interface-mode')) return;
-
+function fitPageContent() {
   const frame = document.querySelector('#popup-page-frame');
   const content = document.querySelector('#page-content');
-  paginatePopupTables(content, frame.clientHeight);
+  if (!frame.clientWidth || !frame.clientHeight) return;
+  paginateTables(content, frame.clientHeight);
   const scale = Math.min(1, frame.clientWidth / content.scrollWidth, frame.clientHeight / content.scrollHeight);
   content.style.setProperty('--popup-scale', scale);
   content.style.setProperty('--popup-inline-shift', `${(content.offsetWidth - content.scrollWidth) * scale / 2}px`);
@@ -267,7 +265,7 @@ async function readApplicationPhoto(input) {
 function applicationForm() {
   const nextHpCode = `HP-${String(store.nextCode).padStart(4, '0')}`;
   const branchOptions=[...new Set([...(store.branches||[]).map((branch)=>branch.name), 'Kothavalasa','Pendurthi','S Kota','Subbavaram','Other'].filter(Boolean))].map((branch)=>`<option>${esc(branch)}</option>`).join('');
-  return `${heading('Customer creation', 'Record customer, guarantor, vehicle, and finance details.', `${btn('▧ Calculation', 'navigate:calculation', 'btn')}${btn('← Back to applications', 'navigate:applications', 'btn')}`)}
+  return `${heading('Customer creation', 'Record customer, guarantor, vehicle, and finance details.', `<button class="btn" type="button" popovertarget="application-summary">Account summary</button>${btn('▧ Calculation', 'navigate:calculation', 'btn')}${btn('← Back to applications', 'navigate:applications', 'btn')}`)}
     <form id="application-form" data-form="application" class="form-layout" autocomplete="off">
       <nav class="application-sections" aria-label="Application sections">${['Customer','Guarantor','Vehicle','Finance','Account and RTO','Follow-up'].map((label, index) => `<button class="btn" type="button" data-action="application-section" data-index="${index}" aria-pressed="${index === 0}">${label}</button>`).join('')}</nav>
       <div class="panel form-panel">
@@ -357,7 +355,7 @@ function applicationForm() {
         <section class="form-section"><h2 class="form-section-head"><span>6</span> Collection follow-up</h2><div class="form-grid"><div class="field"><label for="ptp">PTP date</label><input id="ptp" name="ptp" type="date" /></div><div class="field"><label for="visitDate">Visit date</label><input id="visitDate" name="visitDate" type="date" /></div><div class="field full"><label for="remarks">Remarks</label><textarea id="remarks" name="remarks" placeholder="Collection or visit remarks"></textarea></div><div class="field full"><label for="notes">Application notes</label><textarea id="notes" name="notes" placeholder="Add any additional details for the account file"></textarea></div></div></section>
         <div class="form-actions application-actions"><button class="btn btn-success" type="submit">Save</button><button class="btn" type="button" data-action="find-application">Find</button><button class="btn btn-primary" type="button" data-action="update-application">Update</button><button class="btn btn-danger" type="button" data-action="delete-application">Delete</button><button class="btn" type="reset" data-action="reset-application">Cancel</button><button class="btn" type="button" data-action="navigate:applications">List</button><button class="btn" type="button" data-action="navigate:applications">Close</button></div>
       </div>
-      <aside class="panel form-aside summary-card"><h3>Account summary</h3><div class="summary-line"><span>HP code</span><strong id="summary-code">${nextHpCode}</strong></div><div class="summary-line"><span>On-road price</span><strong id="summary-price">₹0</strong></div><div class="summary-line"><span>Down payment</span><strong id="summary-down">₹0</strong></div><div class="summary-line"><span>DP still due</span><strong id="summary-dp-due">₹0</strong></div><div class="summary-line"><span>Finance amount</span><strong id="summary-principal">₹0</strong></div><div class="summary-line"><span>Estimated interest</span><strong id="summary-interest">₹0</strong></div><div class="summary-line"><span>Term</span><strong id="summary-term">24 months</strong></div><div class="summary-line total"><span>Monthly installment</span><strong id="summary-emi">₹0</strong></div><div class="summary-note"><strong>Calculation guide</strong>Estimated using flat interest. Document charges are included in the finance amount. Confirm the final repayment schedule with your finance agreement before disbursal.</div></aside>
+      <aside id="application-summary" class="panel summary-card" popover aria-labelledby="application-summary-title"><div class="section-head"><h3 id="application-summary-title">Account summary</h3><button class="btn" type="button" popovertarget="application-summary" popovertargetaction="hide">Close</button></div><div class="summary-line"><span>HP code</span><strong id="summary-code">${nextHpCode}</strong></div><div class="summary-line"><span>On-road price</span><strong id="summary-price">₹0</strong></div><div class="summary-line"><span>Down payment</span><strong id="summary-down">₹0</strong></div><div class="summary-line"><span>DP still due</span><strong id="summary-dp-due">₹0</strong></div><div class="summary-line"><span>Finance amount</span><strong id="summary-principal">₹0</strong></div><div class="summary-line"><span>Estimated interest</span><strong id="summary-interest">₹0</strong></div><div class="summary-line"><span>Term</span><strong id="summary-term">24 months</strong></div><div class="summary-line total"><span>Monthly installment</span><strong id="summary-emi">₹0</strong></div><div class="summary-note"><strong>Calculation guide</strong>Estimated using flat interest. Document charges are included in the finance amount. Confirm the final repayment schedule with your finance agreement before disbursal.</div></aside>
     </form>`;
 }
 function updateApplicationSummary() {
@@ -387,11 +385,27 @@ function updateApplicationCode() {
 
 function applicationRows(customers = store.customers) {
   if (!customers.length) return '<tr><td colspan="19"><div class="empty-state">No finance accounts found. Start by creating a new application.</div></td></tr>';
-  return customers.map((c) => `<tr data-record><td><strong>${esc(c.code)}</strong></td><td>${esc(c.partyType || 'HP')}</td><td>${esc(c.name)}</td><td>${esc(c.father||'—')}</td><td>${esc(c.phone||'—')}</td><td>${esc(c.village||'—')}</td><td>${esc(c.guarantor||'—')}</td><td>${esc(c.vehicle)}<small class="table-secondary">${esc(c.vehicleType || '')}</small></td><td>${esc(c.regNo||'—')}</td><td>${shortDate(c.financeDate||c.created)}</td><td>${money(c.principal)}</td><td>${money(c.emi)} · ${c.months} mo.</td><td>${money(c.downPayment||0)}</td><td>${money(c.dpDue||0)}</td><td>${money(c.paid||0)}</td><td>${shortDate(c.nextDue)}</td><td>${money(Math.max(0,c.totalPayable-c.paid))}</td><td>${statusPill(c.status)}</td><td class="application-row-actions"><button class="btn btn-small" data-action="edit-application" data-code="${esc(c.code)}">Edit</button><button class="btn btn-small" data-action="open-calculation" data-code="${esc(c.code)}">Calculation</button><button class="btn btn-small" data-action="open-ledger" data-code="${esc(c.code)}">Ledger</button></td></tr>`).join('');
+  return customers.map((c) => {
+    const code = `data-code="${esc(c.code)}"`;
+    const actions = [
+      btn('Edit', 'edit-application', 'btn btn-small', code),
+      btn('Calculation', 'open-calculation', 'btn btn-small', code),
+      btn('Ledger', 'open-ledger', 'btn btn-small', code),
+      btn('Download', 'export-application', 'btn btn-small', `${code} aria-label="Download details for ${esc(c.name)} (${esc(c.code)})"`),
+    ].join('');
+    return `<tr data-record><td><strong>${esc(c.code)}</strong></td><td>${esc(c.partyType || 'HP')}</td><td>${esc(c.name)}</td><td>${esc(c.father||'—')}</td><td>${esc(c.phone||'—')}</td><td>${esc(c.village||'—')}</td><td>${esc(c.guarantor||'—')}</td><td>${esc(c.vehicle)}<small class="table-secondary">${esc(c.vehicleType || '')}</small></td><td>${esc(c.regNo||'—')}</td><td>${shortDate(c.financeDate||c.created)}</td><td>${money(c.principal)}</td><td>${money(c.emi)} · ${c.months} mo.</td><td>${money(c.downPayment||0)}</td><td>${money(c.dpDue||0)}</td><td>${money(c.paid||0)}</td><td>${shortDate(c.nextDue)}</td><td>${money(Math.max(0,c.totalPayable-c.paid))}</td><td>${statusPill(c.status)}</td><td><div class="application-row-actions">${actions}</div></td></tr>`;
+  }).join('');
 }
-function applicationsPage() {
+function applicationsPage(savedCode) {
   const branches=[...new Set([...(store.branches||[]).map((branch)=>branch.name),...store.customers.map((customer)=>customer.zone||customer.village).filter(Boolean)])];
-  return `${heading('Finance applications', 'Create, find, and manage customer finance accounts.', `${btn('▧ Calculation', 'navigate:calculation', 'btn')}${btn('⎙ Print list', 'print', 'btn')}${btn('↓ Export list', 'export-applications', 'btn')}${btn('＋ New application', 'navigate:new-application', 'btn btn-primary')}`)}
+  const actions = [
+    btn('▧ Calculation', 'navigate:calculation'),
+    btn('⎙ Print list', 'print'),
+    btn('↓ Export list', 'export-applications'),
+    btn('＋ New application', 'navigate:new-application', savedCode ? 'btn' : 'btn btn-primary'),
+  ];
+  if (savedCode) actions.push(btn('Download saved customer', 'export-application', 'btn btn-primary', `data-code="${esc(savedCode)}"`));
+  return `${heading('Finance applications', 'Create, find, and manage customer finance accounts.', actions.join(''))}
     <section class="metric-grid"><div class="metric-tile"><small>All accounts</small><strong>${store.customers.length}</strong><span>On the books</span></div><div class="metric-tile"><small>Active accounts</small><strong>${store.customers.filter((c) => c.status === 'Active').length}</strong><span>In repayment</span></div><div class="metric-tile"><small>Total receivable</small><strong>${money(totalOutstanding())}</strong><span>Outstanding balance</span></div></section>
     <section class="panel application-filter-panel"><div class="application-filter-grid"><div class="field"><label for="application-search">Customer / account search</label><input id="application-search" data-filter-table placeholder="Name, HP code, mobile, vehicle…" /></div><div class="field"><label for="application-from">From date</label><input id="application-from" type="date" data-app-filter /></div><div class="field"><label for="application-to">To date</label><input id="application-to" type="date" data-app-filter /></div><div class="field"><label for="application-branch">Branch</label><select id="application-branch" data-app-filter><option value="all">All branches</option>${branches.map((branch)=>`<option>${esc(branch)}</option>`).join('')}</select></div><div class="field"><label for="application-vehicle">Vehicle type</label><select id="application-vehicle" data-app-filter><option value="all">All vehicles</option><option>Motorcycle</option><option>Scooter</option><option>Three wheeler</option><option>Car</option><option>Commercial vehicle</option></select></div><div class="field"><label for="application-status">Account status</label><select id="application-status" data-app-filter><option value="all">All statuses</option><option>Active</option><option>Pending</option><option>Closed</option><option>Seized</option></select></div><div class="application-filter-actions"><button class="btn btn-primary" type="button" data-action="filter-applications">Search</button><button class="btn" type="button" data-action="display-all-applications">Display all</button></div></div></section>
     <section class="panel data-panel"><div class="panel-toolbar"><div><h2 class="panel-title">Customer list</h2><p class="panel-subtitle" id="application-list-count">${store.customers.length} finance accounts</p></div></div><div class="table-wrap"><table><thead><tr><th>HP code</th><th>Type</th><th>Party name</th><th>Father / husband</th><th>Mobile</th><th>Village</th><th>Guarantor</th><th>Vehicle name / type</th><th>Vehicle no.</th><th>Finance date</th><th>Finance amount</th><th>EMI / term</th><th>Down payment</th><th>DP due</th><th>Paid</th><th>Next due</th><th>Balance</th><th>Status</th><th>Actions</th></tr></thead><tbody id="accounts-table">${applicationRows()}</tbody></table></div><div class="pagination"><span id="application-list-summary">Showing ${store.customers.length} accounts</span><span>Page 1 of 1</span></div></section>`;
@@ -753,7 +767,7 @@ function saveVoucherEntry(form, update=false) {
 function loadVoucherEntry(id) {
   const voucher=store.vouchers.find((entry)=>entry.id===id);const form=document.querySelector('#voucher-form');if(!voucher||!form)return;
   Object.entries(voucher).forEach(([name,value])=>{const field=form.elements.namedItem(name);if(field&&value!=null&&field.tagName!=='FIELDSET')field.value=String(value);});
-  form.dataset.editingId=voucher.id;document.querySelector('#voucher-number').value=voucher.number;showToast(`Loaded ${voucher.number} for editing.`);form.scrollIntoView({behavior:'smooth',block:'start'});
+  form.dataset.editingId=voucher.id;document.querySelector('#voucher-number').value=voucher.number;showToast(`Loaded ${voucher.number} for editing.`);form.querySelector('#voucher-date')?.focus({preventScroll:true});
 }
 function findVoucherEntry() {
   const form=document.querySelector('#voucher-form');const number=form?.elements.namedItem('number')?.value.trim().toLowerCase();const entry=store.vouchers.find((voucher)=>voucher.kind===form?.dataset.kind&&voucher.number.toLowerCase()===number);
@@ -867,7 +881,7 @@ function render(accountCode) {
   const content = document.querySelector('#page-content');
   switch (currentPage) {
     case 'home': content.innerHTML = dashboard(); break;
-    case 'applications': content.innerHTML = applicationsPage(); renderApplicationList(); break;
+    case 'applications': content.innerHTML = applicationsPage(accountCode); renderApplicationList(); break;
     case 'new-application': content.innerHTML = applicationForm(); updateApplicationSummary(); break;
     case 'calculation': content.innerHTML = calculationPage(); renderCalculation(); break;
     case 'customers': content.innerHTML = customersPage(); break;
@@ -900,9 +914,15 @@ function exportCsv(filename, rows) {
   const link = document.createElement('a');const url=URL.createObjectURL(new Blob([`\ufeff${csv}`], { type: 'text/csv;charset=utf-8' }));link.href=url;link.download=filename;document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
   showToast(`${filename} downloaded.`);
 }
-function exportApplications() {
+function exportApplications(customers = store.customers, filename = 'profit-plus-account-register.csv') {
   const columns=['HP code','A/C no.','Party type','Party name','Mobile','Father / husband','Age','Date of birth','Occupation','Door no.','Street','Village / town','Mandal','District','State','PIN code','STD code','Phone residence','Phone office','Zone / branch','Area','Guarantor name','Guarantor mobile','Guarantor father / husband','Guarantor age','Guarantor occupation','Guarantor door no.','Guarantor street','Guarantor village','Guarantor mandal','Guarantor district','Guarantor STD code','Guarantor phone residence','Guarantor phone office','Vehicle type','Vehicle name / make','Vehicle model','Vehicle no.','Engine no.','Chassis no.','On-road price','Delivery date','Finance date','First installment date','Maturity date','Finance amount','Down payment','Initial payment','DP due','Document charges','Interest rate','No. installments','EMI','Total payable','Amount paid','Balance','Account status','Ledger code','Company','Verified by','Seizing status','Installments pending','RTO agent','C Book','E no.','C no.','Assigned / done by','Consultant','Agent phone','HP return','Account description','Narration','Notice description','Account close description','PTP date','Visit date','Remarks','Application notes'];
-  exportCsv('profit-plus-account-register.csv', [columns,...store.customers.map((c)=>[c.code,c.accountNo,c.partyType||'HP',c.name,c.phone,c.father,c.age,c.dob,c.occupation,c.doorNo,c.street,c.village,c.mandal,c.district,c.state,c.pinCode,c.stdCode,c.phoneR,c.phoneO,c.zone,c.area,c.guarantor,c.guarantorPhone,c.guarantorFather,c.guarantorAge,c.guarantorOccupation,c.guarantorDoorNo,c.guarantorStreet,c.guarantorVillage,c.guarantorMandal,c.guarantorDistrict,c.guarantorStdCode,c.guarantorPhoneR,c.guarantorPhoneO,c.vehicleType,c.vehicle,c.vehicleModel,c.regNo,c.engineNo,c.chassisNo,c.purchasePrice,c.deliveryDate,c.financeDate||c.created,c.firstDueDate,c.maturityDate,c.principal,c.downPayment,c.initialPayment,c.dpDue,c.docCharges,c.interestRate,c.months,c.emi,c.totalPayable,c.paid,Math.max(0,c.totalPayable-c.paid),c.status,c.ledgerCode,c.company,c.verifiedBy,c.seizingStatus,c.installmentsPending,c.rtoAgent,c.cBook,c.eNo,c.cNo,c.assignedBy,c.consultant,c.agentPhone,c.hpReturn,c.accountDescription,c.narration,c.noticeDescription,c.accountCloseDescription,c.ptp,c.visitDate,c.remarks,c.notes])]);
+  exportCsv(filename, [columns,...customers.map((c)=>[c.code,c.accountNo,c.partyType||'HP',c.name,c.phone,c.father,c.age,c.dob,c.occupation,c.doorNo,c.street,c.village,c.mandal,c.district,c.state,c.pinCode,c.stdCode,c.phoneR,c.phoneO,c.zone,c.area,c.guarantor,c.guarantorPhone,c.guarantorFather,c.guarantorAge,c.guarantorOccupation,c.guarantorDoorNo,c.guarantorStreet,c.guarantorVillage,c.guarantorMandal,c.guarantorDistrict,c.guarantorStdCode,c.guarantorPhoneR,c.guarantorPhoneO,c.vehicleType,c.vehicle,c.vehicleModel,c.regNo,c.engineNo,c.chassisNo,c.purchasePrice,c.deliveryDate,c.financeDate||c.created,c.firstDueDate,c.maturityDate,c.principal,c.downPayment,c.initialPayment,c.dpDue,c.docCharges,c.interestRate,c.months,c.emi,c.totalPayable,c.paid,Math.max(0,c.totalPayable-c.paid),c.status,c.ledgerCode,c.company,c.verifiedBy,c.seizingStatus,c.installmentsPending,c.rtoAgent,c.cBook,c.eNo,c.cNo,c.assignedBy,c.consultant,c.agentPhone,c.hpReturn,c.accountDescription,c.narration,c.noticeDescription,c.accountCloseDescription,c.ptp,c.visitDate,c.remarks,c.notes])]);
+}
+function exportApplication(code) {
+  const customer = store.customers.find(record => record.code === code);
+  if (!customer) { showToast('This customer account could not be found.', 'error'); return; }
+  const fileCode = customer.code.replace(/[^a-z0-9_-]+/gi, '-');
+  exportApplications([customer], `profit-plus-customer-${fileCode}.csv`);
 }
 function exportDue() {
   exportCsv('profit-plus-due-list.csv', dueReportMatrix(getDueFilterOptions()));
@@ -923,7 +943,7 @@ function saveApplication(form) {
   const nextStore = { ...store, nextCode: store.nextCode + 1, customers: [customer, ...store.customers], transactions: [...store.transactions] };
   if(customer.initialPayment>0)nextStore.transactions.unshift({id:`RC-${String(nextStore.nextReceipt++).padStart(3,'0')}`,code:customer.code,date:customer.financeDate||isoDate(),amount:customer.initialPayment,mode:customer.mode||'Cash',bank:customer.bankName||'',reference:customer.chequeNo||'',type:'Collection',narration:'Initial down payment'});
   if (!persist(nextStore)) return;
-  showToast(`Finance account ${customer.code} created for ${customer.name}.`);navigate('applications');
+  showToast(`Finance account ${customer.code} created for ${customer.name}.`);navigate('applications', customer.code);
 }
 function applicationDataFromForm(form, existing = null) {
   if (form.querySelector('[data-photo-label][aria-busy="true"]')) {
@@ -987,7 +1007,7 @@ function updateApplicationEntry() {
   if(initialReceipt){initialReceipt.amount=customer.initialPayment;initialReceipt.date=customer.financeDate||initialReceipt.date;initialReceipt.mode=customer.mode||initialReceipt.mode;}
   else if(customer.initialPayment>0)nextStore.transactions.unshift({id:`RC-${String(nextStore.nextReceipt++).padStart(3,'0')}`,code:customer.code,date:customer.financeDate||isoDate(),amount:customer.initialPayment,mode:customer.mode||'Cash',type:'Collection',narration:'Initial down payment'});
   if (!persist(nextStore)) return;
-  showToast(`Finance account ${customer.code} updated.`);navigate('applications');
+  showToast(`Finance account ${customer.code} updated.`);navigate('applications', customer.code);
 }
 function deleteApplicationEntry() {
   const form=document.querySelector('#application-form');const code=form?.dataset.editingCode;
@@ -1131,7 +1151,7 @@ document.addEventListener('click',(event)=>{
   else if(action==='delete-voucher')deleteVoucherEntry();
   else if(action==='cancel-voucher'){cancelVoucherEntry();showToast('Entry cleared.');}
   else if(action==='load-voucher')loadVoucherEntry(actionButton.dataset.id);
-  else if(action==='list-vouchers'){const search=document.querySelector('#voucher-list [data-filter-table]');if(search)search.value='';document.querySelectorAll('#voucher-list tr[data-record]').forEach((row)=>row.hidden=false);document.querySelector('#voucher-list')?.scrollIntoView({behavior:'smooth',block:'start'});}
+  else if(action==='list-vouchers'){const search=document.querySelector('#voucher-list [data-filter-table]');if(search){search.value='';search.focus({preventScroll:true});}document.querySelectorAll('#voucher-list tr[data-record]').forEach((row)=>row.hidden=false);}
   else if(action==='export-vouchers')exportVouchers();
   else if(action==='search-hp-details')renderHpDetails();
   else if(action==='display-all-hp-details'){['hp-detail-query'].forEach((id)=>{const input=document.querySelector(`#${id}`);if(input)input.value='';});['hp-detail-type','hp-detail-search-by','hp-detail-source'].forEach((id)=>{const input=document.querySelector(`#${id}`);if(input)input.value=id==='hp-detail-search-by'?'code':'all';});renderHpDetails();}
@@ -1163,6 +1183,7 @@ document.addEventListener('click',(event)=>{
   else if(action==='open-calculation'){selectedCalculationCode=actionButton.dataset.code||'';navigate('calculation');}
   else if(action==='edit-application'){const customer=store.customers.find((record)=>record.code===actionButton.dataset.code);if(customer){navigate('new-application');loadApplicationIntoForm(customer);}}
   else if(action==='export-applications')exportApplications();
+  else if(action==='export-application')exportApplication(actionButton.dataset.code);
   else if(action==='export-due')exportDue();
   else if(action==='open-ledger')navigate('ledger', actionButton.dataset.code);
   else if(action==='toggle-vehicle'){const c=store.customers.find((x)=>x.code===arg);if(c){c.status=c.status==='Seized'?'Active':'Seized';persist();render();showToast(`${c.code} status updated to ${c.status}.`);}}
@@ -1228,9 +1249,9 @@ window.addEventListener('afterprint',()=>document.body.classList.remove('printin
 buildPopupNavigation();
 let savedViewMode='sidebar';try{if(localStorage.getItem(VIEW_MODE_KEY)==='popup')savedViewMode='popup';}catch{}
 setViewMode(savedViewMode);
-const popupFit = new ResizeObserver(fitPopupContent);
-popupFit.observe(document.querySelector('#popup-page-frame'));
-popupFit.observe(document.querySelector('#page-content'));
-const popupContentChanges = new MutationObserver(fitPopupContent);
-popupContentChanges.observe(document.querySelector('#page-content'), {childList: true, subtree: true, attributes: true, attributeFilter: ['hidden']});
+const pageFit = new ResizeObserver(fitPageContent);
+pageFit.observe(document.querySelector('#popup-page-frame'));
+pageFit.observe(document.querySelector('#page-content'));
+const pageContentChanges = new MutationObserver(fitPageContent);
+pageContentChanges.observe(document.querySelector('#page-content'), {childList: true, subtree: true, attributes: true, attributeFilter: ['hidden']});
 render();updateClock();setInterval(updateClock,30000);
